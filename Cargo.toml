@@ -1,0 +1,13 @@
+[package]
+name = "mermaid-preview"
+version = "0.1.0"
+edition = "2021"
+authors = ["Hisyam Zayd <hisyamzayd@gmail.com>"]
+description = "Zero-config interactive live preview for Mermaid diagrams in Zed"
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+zed_extension_api = "0.7.0"
