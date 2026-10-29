@@ -17,6 +17,8 @@ export class MermaidLanguageServer {
     this.activeUri = null;
     this.isServerRunning = false;
     this.nextRequestId = 1;
+    this.watchdogTimer = null;
+    this.watchdogTimeoutMs = options.watchdogTimeoutMs ?? 5000;
 
     this.reader.on('message', this.handleMessage.bind(this));
     this.inStream.pipe(this.reader);
@@ -53,7 +55,7 @@ export class MermaidLanguageServer {
               resolveProvider: false,
             },
             executeCommandProvider: {
-              commands: ['mermaid.openPreview'],
+              commands: ['mermaid.openPreview', 'mermaid.showRemoteGuide'],
             },
           },
           serverInfo: {
@@ -66,6 +68,10 @@ export class MermaidLanguageServer {
         return params;
 
       case 'shutdown':
+        if (this.watchdogTimer) {
+          clearTimeout(this.watchdogTimer);
+          this.watchdogTimer = null;
+        }
         if (this.previewServer) {
           await this.previewServer.close();
           this.isServerRunning = false;
@@ -75,7 +81,14 @@ export class MermaidLanguageServer {
       case 'textDocument/codeAction': {
         const uri = params?.textDocument?.uri || this.activeUri;
         console.error(`[mermaid-lsp] textDocument/codeAction requested for: ${uri}`);
-        return [
+
+        const isRemote = Boolean(
+          process.env.SSH_CLIENT ||
+          process.env.SSH_CONNECTION ||
+          process.env.SSH_TTY
+        );
+
+        const actions = [
           {
             title: 'Open Mermaid Diagram Preview',
             command: {
@@ -85,9 +98,32 @@ export class MermaidLanguageServer {
             },
           },
         ];
+
+        if (isRemote) {
+          actions.push({
+            title: 'Mermaid: Remote SSH Port Forwarding Guide',
+            command: {
+              title: 'Mermaid: Remote SSH Port Forwarding Guide',
+              command: 'mermaid.showRemoteGuide',
+              arguments: [this.previewServer.port || 8765],
+            },
+          });
+        }
+
+        return actions;
       }
 
       case 'workspace/executeCommand': {
+        if (params?.command === 'mermaid.showRemoteGuide') {
+          const port = params?.arguments?.[0] || this.previewServer.port || 8765;
+          const guideMessage = `To view live preview over SSH: Add to your Mac's Zed settings.json: "ssh_connections": [{ "port_forwards": [{ "local_port": ${port}, "remote_port": ${port} }] }] OR run in Mac terminal: ssh -L ${port}:localhost:${port} your-host`;
+          this.sendNotification('window/showMessage', {
+            type: 3, // Info
+            message: guideMessage,
+          });
+          return { success: true, port, guide: guideMessage };
+        }
+
         if (params?.command === 'mermaid.openPreview') {
           await this._ensureServerStarted();
 
@@ -117,6 +153,27 @@ export class MermaidLanguageServer {
             type: 3, // Info
             message,
           });
+
+          // Remote SSH Connection Watchdog:
+          // If no browser client connects to port within watchdog timeout, notify user with error toast
+          if (isRemote) {
+            const triggerTime = Date.now();
+            if (this.watchdogTimer) {
+              clearTimeout(this.watchdogTimer);
+            }
+            this.watchdogTimer = setTimeout(() => {
+              const hasConnectedClients = this.previewServer?.wss && this.previewServer.wss.clients.size > 0;
+              const hasRecentHttp = (this.previewServer?.lastClientConnectionTime || 0) >= triggerTime;
+
+              if (!hasConnectedClients && !hasRecentHttp) {
+                console.error(`[mermaid-lsp] Connection watchdog timeout: no client connected to port ${port}`);
+                this.sendNotification('window/showMessage', {
+                  type: 1, // Error
+                  message: `⚠️ Mermaid Preview: No connection received on port ${port}. Please forward port ${port} in your Mac's Zed settings.json ("port_forwards": [{"local_port": ${port}, "remote_port": ${port}}]) or run "ssh -L ${port}:localhost:${port} your-host".`,
+                });
+              }
+            }, this.watchdogTimeoutMs);
+          }
 
           return { success: true, url: previewUrl, port };
         }
@@ -176,6 +233,10 @@ export class MermaidLanguageServer {
       }
 
       case 'exit':
+        if (this.watchdogTimer) {
+          clearTimeout(this.watchdogTimer);
+          this.watchdogTimer = null;
+        }
         if (this.previewServer) {
           await this.previewServer.close();
         }

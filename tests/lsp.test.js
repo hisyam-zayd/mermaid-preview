@@ -59,7 +59,10 @@ test('MermaidLanguageServer initialize handshake', async () => {
   assert.equal(response.id, 1);
   assert.equal(response.result.capabilities.textDocumentSync, 1);
   assert.ok(response.result.capabilities.codeActionProvider);
-  assert.deepEqual(response.result.capabilities.executeCommandProvider.commands, ['mermaid.openPreview']);
+  assert.deepEqual(response.result.capabilities.executeCommandProvider.commands, [
+    'mermaid.openPreview',
+    'mermaid.showRemoteGuide',
+  ]);
 
   await server.previewServer.close();
 });
@@ -153,5 +156,75 @@ test('MermaidLanguageServer executeCommand triggers window/showDocument', async 
   assert.equal(cmdRes.result.success, true);
   assert.ok(cmdRes.result.port > 0);
 
+  if (server.watchdogTimer) {
+    clearTimeout(server.watchdogTimer);
+    server.watchdogTimer = null;
+  }
+  await server.previewServer.close();
+});
+
+test('MermaidLanguageServer executeCommand mermaid.showRemoteGuide returns setup guide', async () => {
+  const { server, send, waitForMessage } = createTestLspHarness();
+
+  const msgPromise = waitForMessage((m) => m.method === 'window/showMessage');
+  const cmdResponsePromise = waitForMessage((m) => m.id === 6);
+
+  send({
+    jsonrpc: '2.0',
+    id: 6,
+    method: 'workspace/executeCommand',
+    params: {
+      command: 'mermaid.showRemoteGuide',
+      arguments: [8765],
+    },
+  });
+
+  const msg = await msgPromise;
+  assert.ok(msg.params.message.includes('ssh_connections'));
+  assert.ok(msg.params.message.includes('port_forwards'));
+
+  const cmdRes = await cmdResponsePromise;
+  assert.equal(cmdRes.result.success, true);
+  assert.equal(cmdRes.result.port, 8765);
+
+  await server.previewServer.close();
+});
+
+test('MermaidLanguageServer remote watchdog alerts user if no browser client connects', async () => {
+  const origSsh = process.env.SSH_CLIENT;
+  process.env.SSH_CLIENT = '192.168.1.100 50000 22';
+
+  const { server, send, waitForMessage } = createTestLspHarness();
+  server.watchdogTimeoutMs = 60; // fast timeout for test
+
+  const errorAlertPromise = waitForMessage(
+    (m) => m.method === 'window/showMessage' && m.params.type === 1
+  );
+
+  send({
+    jsonrpc: '2.0',
+    id: 7,
+    method: 'workspace/executeCommand',
+    params: {
+      command: 'mermaid.openPreview',
+      arguments: ['file:///workspace/diagram.mmd'],
+    },
+  });
+
+  const errorAlert = await errorAlertPromise;
+  assert.equal(errorAlert.params.type, 1, 'Type 1 is LSP Error severity');
+  assert.ok(errorAlert.params.message.includes('No connection received on port'));
+  assert.ok(errorAlert.params.message.includes('ssh -L'));
+
+  if (origSsh !== undefined) {
+    process.env.SSH_CLIENT = origSsh;
+  } else {
+    delete process.env.SSH_CLIENT;
+  }
+
+  if (server.watchdogTimer) {
+    clearTimeout(server.watchdogTimer);
+    server.watchdogTimer = null;
+  }
   await server.previewServer.close();
 });

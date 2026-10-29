@@ -31,6 +31,7 @@ export class PreviewServer {
     this.currentContent = options.initialContent || 'flowchart TD\n    Start --> End';
     this.isValid = true;
     this.lastError = null;
+    this.lastClientConnectionTime = 0;
   }
 
   /**
@@ -57,6 +58,7 @@ export class PreviewServer {
       });
 
       this.wss.on('connection', (socket) => {
+        this.lastClientConnectionTime = Date.now();
         // Send current state immediately upon client connection
         socket.send(
           JSON.stringify({
@@ -157,6 +159,7 @@ export class PreviewServer {
    * Serves static webview files with proper MIME types.
    */
   async _handleHttpRequest(req, res) {
+    this.lastClientConnectionTime = Date.now();
     if (req.method !== 'GET') {
       res.writeHead(405, { 'Content-Type': 'text/plain' });
       res.end('Method Not Allowed');
