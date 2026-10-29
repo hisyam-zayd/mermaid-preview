@@ -12,4 +12,5 @@ commit = "90ae195b31933ceb9d079abfa8a3ad0a36fee4cc"
 
 [language_servers.mermaid-lsp]
 name = "Mermaid Language Server"
+language = "Mermaid"
 languages = ["Mermaid"]

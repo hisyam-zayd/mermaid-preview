@@ -74,6 +74,7 @@ export class MermaidLanguageServer {
 
       case 'textDocument/codeAction': {
         const uri = params?.textDocument?.uri || this.activeUri;
+        console.error(`[mermaid-lsp] textDocument/codeAction requested for: ${uri}`);
         return [
           {
             title: 'Open Mermaid Diagram Preview',
@@ -100,10 +101,21 @@ export class MermaidLanguageServer {
             takeFocus: true,
           });
 
+          // Detect SSH remote session
+          const isRemote = Boolean(
+            process.env.SSH_CLIENT ||
+            process.env.SSH_CONNECTION ||
+            process.env.SSH_TTY
+          );
+
+          const message = isRemote
+            ? `Mermaid Preview started at ${previewUrl} (Remote SSH: forward port ${port} via Zed settings or ssh -L ${port}:localhost:${port})`
+            : `Mermaid Preview opened at ${previewUrl}`;
+
           // Show in-editor toast notification
           this.sendNotification('window/showMessage', {
             type: 3, // Info
-            message: `Mermaid Preview opened at ${previewUrl}`,
+            message,
           });
 
           return { success: true, url: previewUrl, port };
