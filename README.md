@@ -1,13 +1,13 @@
 # Mermaid Preview for Zed
 
-Zero-config, high-fidelity interactive live preview and language support for **Mermaid** diagrams (`.mmd`, `.mermaid`) in the [Zed code editor](https://zed.dev).
+High-fidelity interactive live preview and language support for **Mermaid** diagrams (`.mmd`, `.mermaid`) in the [Zed code editor](https://zed.dev). Zero-configuration for local workflows, with simple 1-step port forwarding for remote SSH development.
 
 ---
 
 ## Features
 
 * **100% Diagram Fidelity:** Powered by the official `mermaid.js` engine (v12+). Supports flowcharts, sequence diagrams, class diagrams, state machines, ER diagrams, Gantt charts, Git graphs, mindmaps, and directives (`%%{init}%%`).
-* **Zero Configuration:** Automatically finds an open local port, serves web assets, and launches your default browser via Zed's native `window/showDocument` LSP protocol.
+* **Zero Configuration Locally:** Automatically allocates a free local port, serves web assets, and launches your default browser via Zed's native `window/showDocument` LSP protocol.
 * **Non-Disruptive Real-Time Sync:** As you edit code in Zed, the diagram updates live via WebSockets without stealing your cursor focus or resetting your scroll position.
 * **State-Preserving Viewport Controls:**
   * 🔍 **Fit to Screen:** Instantly scales complex diagrams to fit your display.
@@ -16,7 +16,7 @@ Zero-config, high-fidelity interactive live preview and language support for **M
   * ➕ / ➖ Smooth mouse-wheel & touchpad pinch-to-zoom and click-and-drag panning.
 * **Instant Exports:** One-click **Copy SVG** to clipboard or download **High-Res 2x PNG**.
 * **In-Editor Syntax Diagnostics:** Pinpoints syntax errors with exact line and column numbers using real-time LSP diagnostics.
-* **Remote Dev Ready:** Works seamlessly across remote SSH connections by adding a single port-forward rule in Zed.
+* **Seamless Remote SSH Support:** Works effortlessly across remote SSH connections (MacBook/Windows client ⟷ Linux remote host) with standard port tunneling.
 
 ---
 
@@ -24,14 +24,14 @@ Zero-config, high-fidelity interactive live preview and language support for **M
 
 This extension is **100% platform-agnostic** and supports any combination of local and remote development:
 
-| Mode | Client Machine (Display) | Host Machine (Code & Files) | Status |
-| :--- | :--- | :--- | :---: |
-| **Local** | macOS (Apple Silicon & Intel) | Same machine | ✅ Supported |
-| **Local** | Linux (Ubuntu, Fedora, Arch, Debian) | Same machine | ✅ Supported |
-| **Local** | Windows 10 / 11 | Same machine | ✅ Supported |
-| **Remote SSH** | **macOS (MacBook)** | **Linux (Ubuntu, Debian, Fedora)** | ✅ Supported *(Zero config)* |
-| **Remote SSH** | **Windows PC** | **Linux Server / Workstation** | ✅ Supported |
-| **Remote SSH** | **Linux Laptop** | **Linux Server / Cloud VM** | ✅ Supported |
+| Mode | Client Machine (Display / Browser) | Host Machine (Code & Daemon) | Port Forwarding Needed? | Status |
+| :--- | :--- | :--- | :---: | :---: |
+| **Local** | macOS (Apple Silicon & Intel) | Same machine | ❌ No *(100% Zero Config)* | ✅ Supported |
+| **Local** | Linux (Ubuntu, Fedora, Arch, Debian) | Same machine | ❌ No *(100% Zero Config)* | ✅ Supported |
+| **Local** | Windows 10 / 11 | Same machine | ❌ No *(100% Zero Config)* | ✅ Supported |
+| **Remote SSH** | **macOS (MacBook)** | **Linux (Ubuntu, Debian, Fedora)** | ✅ Yes (Port 8765) | ✅ Supported |
+| **Remote SSH** | **Windows PC** | **Linux Server / Workstation** | ✅ Yes (Port 8765) | ✅ Supported |
+| **Remote SSH** | **Linux Laptop** | **Linux Server / Cloud VM** | ✅ Yes (Port 8765) | ✅ Supported |
 
 **Supported Browsers:** Chrome, Safari, Firefox, Edge, Arc, Brave, and any modern WebKit/Chromium-based browser.
 
@@ -39,9 +39,11 @@ This extension is **100% platform-agnostic** and supports any combination of loc
 
 ## Running in Zed as a Development Extension
 
-Since this extension is in active development and not yet published to the official Zed Extension Registry, you can load and run it directly as a **Development Extension**.
+Since this extension is in active development and awaiting approval on the official Zed Extension Registry, you can load and run it directly as a **Development Extension**.
 
 ### Option A: Local Development (macOS, Linux, or Windows)
+*Zero configuration required.*
+
 1. Clone this repository:
    ```bash
    git clone https://github.com/hisyamzayd/mermaid-preview.git
@@ -52,35 +54,45 @@ Since this extension is in active development and not yet published to the offic
 3. Open the Command Palette (`Cmd + Shift + P` on macOS / `Ctrl + Shift + P` on Linux & Windows).
 4. Type and select: **`Extensions: Install Development Extension`**.
 5. Select this repository folder (`mermaid-preview`).
-6. Zed will load the extension and activate it for all `.mmd` and `.mermaid` files.
+6. Zed will load the extension and activate it for all `.mmd` and `.mermaid` files immediately.
 
 ---
 
-### Option B: Remote SSH Development (Any Client ⟷ Any Remote Host)
-If your code lives on a remote host (e.g. an Ubuntu machine at home or a cloud VM) and you connect remotely from your laptop (Mac, Windows, or Linux):
+### Option B: Remote SSH Development (Mac / Windows Client ⟷ Remote Host)
 
-1. **Install dependencies on the remote host:**
-   ```bash
-   cd /path/to/mermaid-preview
-   npm install
-   ```
-2. **Configure Zed Port Forwarding:**
-   In your Zed `settings.json` (`Cmd + Shift + P` or `Ctrl + Shift + P` → `zed: open settings`):
-   ```json
-   {
-     "ssh_connections": [
-       {
-         "host": "your-remote-host",
-         "port_forwards": [
-           {
-             "local_port": 8765,
-             "remote_port": 8765
-           }
-         ]
-       }
-     ]
-   }
-   ```
+When using Zed Remote Development over SSH:
+* **The Preview Server runs on your remote host** (allocating port 8765 by default).
+* **The web browser runs locally on your client machine** (MacBook or Windows PC).
+
+Because Zed does not bundle an automatic reverse proxy, port 8765 needs to be forwarded from the remote host to your local client. You can set this up in **one minute** using either method below:
+
+#### Method 1: Automatically via Zed Settings (Recommended)
+Add a port forward rule to your local Zed `settings.json` (`Cmd + Shift + P` → `zed: open settings` on your Mac):
+
+```json
+{
+  "ssh_connections": [
+    {
+      "host": "your-remote-host-name",
+      "port_forwards": [
+        {
+          "local_port": 8765,
+          "remote_port": 8765
+        }
+      ]
+    }
+  ]
+}
+```
+*Note: Replace `"your-remote-host-name"` with your exact host alias from `~/.ssh/config` (e.g. `"optiplex"` or `"ubuntu-server"`). Once saved, Zed keeps the tunnel open automatically whenever you connect!*
+
+#### Method 2: Via Terminal SSH Tunnel
+If you prefer not to touch `settings.json`, run an SSH tunnel directly in your local terminal:
+
+```bash
+ssh -L 8765:localhost:8765 user@your-remote-host
+```
+*(Keep this terminal open while you work; all browser requests to `localhost:8765` will seamlessly reach the remote preview server).*
 3. **Load the Development Extension:**
    * In your remote Zed window, open the Command Palette.
    * Select: **`Extensions: Install Development Extension`**.
