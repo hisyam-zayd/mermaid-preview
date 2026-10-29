@@ -110,20 +110,69 @@ ssh -L 8765:localhost:8765 user@your-remote-host
 
 ---
 
+## Architecture & How It Works
+
+Zed does not include a native Mermaid language server. Instead, this extension provides a **custom language server (`mermaid-lsp`)** paired with a lightweight **Rust WebAssembly bridge**.
+
+```mermaid
+flowchart TD
+    subgraph ZedEditor ["1. Zed Editor (Native LSP Client)"]
+        UI["Editor Buffer (.mmd file)"]
+        LSPClient["Zed LSP Client Engine<br/>(Listens for Cmd + . & diagnostics)"]
+        WasmHost["Zed WASM Extension Host"]
+    end
+
+    subgraph RustBridge ["2. Extension Bridge (src/lib.rs)"]
+        Wasm["extension.wasm<br/>Resolves paths in 0ms & tells Zed:<br/>'Execute: node src/lsp/index.js'"]
+    end
+
+    subgraph CustomLSP ["3. Custom Language Server (src/lsp/index.js)"]
+        NodeServer["mermaid-lsp Process"]
+        JSONRPC["LSP Protocol Handler (src/lsp/json-rpc.js)"]
+        Validator["Official mermaid.parse Validator (src/server/validator.js)"]
+        HttpWs["Preview Server & WebSocket Daemon (src/server/index.js)"]
+        Watchdog["15-Second Smart Connection Watchdog"]
+    end
+
+    UI --> LSPClient
+    LSPClient --> WasmHost
+    WasmHost --> Wasm
+    Wasm -. Spawns .-> NodeServer
+    LSPClient <== "JSON-RPC (stdin / stdout)" ==> NodeServer
+    NodeServer --> JSONRPC
+    NodeServer --> Validator
+    NodeServer --> HttpWs
+    NodeServer --> Watchdog
+```
+
+### The 3 Layers
+
+1. **Zed (LSP Client):** Zed natively speaks the Language Server Protocol (LSP). It handles editor tabs, triggers <kbd>Cmd</kbd> + <kbd>.</kbd> quick fixes, displays in-editor error squigglies, and requests browser launches via `window/showDocument`.
+2. **The Rust WebAssembly Bridge (`src/lib.rs`):** A zero-overhead compiled WASM module implementing `zed_extension_api`. It resolves server paths in 0ms without running subshells, telling Zed how to spawn `mermaid-lsp`.
+3. **The Custom Language Server (`src/lsp/index.js`):** A standalone Node.js process that:
+   * Decodes incoming LSP JSON-RPC messages from Zed via `src/lsp/json-rpc.js`.
+   * Validates diagrams in real-time using official `mermaid.parse` in `src/server/validator.js` and publishes diagnostics back to Zed.
+   * Manages an automated HTTP/WebSocket preview server in `src/server/index.js` that pushes live diagram AST updates directly to the web canvas.
+   * Runs a 15-second connection watchdog in remote SSH sessions to notify you if port forwarding is needed.
+
+---
+
 ## Development & Automated Tests
 
 Run the full automated test suite (unit tests, integration tests, and end-to-end LSP workflows):
 
 ```bash
 npm test
+npm run test:coverage
 ```
 
-### Test Coverage (26 Passing Tests)
-* ✅ **Port Allocator:** Verifies automatic free port binding and avoidance of port collisions.
-* ✅ **Validator:** Tests syntax verification across flowcharts, sequence diagrams, and broken code.
-* ✅ **Server Integration:** Verifies HTTP static serving, security path isolation, and WebSocket streaming.
-* ✅ **LSP Protocol:** Validates JSON-RPC framing, initialize handshake, diagnostics reporting, and `window/showDocument` execution.
-* ✅ **Full E2E Workflow:** Tests complete pipeline from document open to browser WebSocket sync and real-time edits.
+### Test Coverage (37 Passing Tests — 94.2% Line Coverage)
+* ✅ **Port Allocator:** Verifies automatic free port binding, dynamic ephemeral port `0` isolation, and collision avoidance.
+* ✅ **Validator:** Tests syntax verification across flowcharts, sequence diagrams, and broken code with exact line numbers.
+* ✅ **Server Integration:** Verifies HTTP static asset serving, directory traversal security, and real-time WebSocket broadcasting.
+* ✅ **LSP Protocol:** Validates JSON-RPC framing, initialization handshake, `quickfix` code action resolution, and `window/showDocument` auto-launch.
+* ✅ **Remote SSH & Watchdog:** Validates SSH session detection, setup guidance generation, client connection detection, and timeout alerting.
+* ✅ **Full E2E Workflow:** Tests complete pipeline from document opening to browser WebSocket sync and real-time typing edits.
 
 ---
 
