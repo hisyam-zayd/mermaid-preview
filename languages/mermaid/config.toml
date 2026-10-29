@@ -2,5 +2,4 @@ name = "Mermaid"
 grammar = "mermaid"
 path_suffixes = ["mmd", "mermaid"]
 line_comments = ["%%"]
-block_comment = null
 autoclose_before = ";:.,=}])>\"'"
