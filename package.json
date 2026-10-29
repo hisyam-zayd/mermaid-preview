@@ -1,9 +1,13 @@
 {
   "name": "mermaid-preview",
   "version": "0.1.0",
-  "description": "Zero-config interactive live preview for Mermaid diagrams in Zed IDE",
+  "description": "Interactive live preview for Mermaid diagrams in Zed — zero-config locally, seamless remote SSH support",
   "type": "module",
   "main": "src/lsp/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hisyam-zayd/mermaid-preview.git"
+  },
   "scripts": {
     "test": "node --test tests/**/*.test.js",
     "test:coverage": "node --test --experimental-test-coverage tests/**/*.test.js",

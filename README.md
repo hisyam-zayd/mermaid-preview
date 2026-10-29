@@ -46,7 +46,7 @@ Since this extension is in active development and awaiting approval on the offic
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/hisyamzayd/mermaid-preview.git
+   git clone https://github.com/hisyam-zayd/mermaid-preview.git
    cd mermaid-preview
    npm install
    ```

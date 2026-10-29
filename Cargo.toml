@@ -3,8 +3,9 @@ name = "mermaid-preview"
 version = "0.1.0"
 edition = "2021"
 authors = ["Hisyam Zayd <hisyamzayd@gmail.com>"]
-description = "Zero-config interactive live preview for Mermaid diagrams in Zed"
+description = "Interactive live preview for Mermaid diagrams in Zed — zero-config locally, seamless remote SSH support"
 license = "MIT"
+repository = "https://github.com/hisyam-zayd/mermaid-preview"
 
 [lib]
 crate-type = ["cdylib"]

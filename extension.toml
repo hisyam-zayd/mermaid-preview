@@ -3,8 +3,8 @@ name = "Mermaid Preview"
 version = "0.1.0"
 schema_version = 1
 authors = ["Hisyam Zayd <hisyamzayd@gmail.com>"]
-description = "Zero-config interactive live preview and language support for Mermaid diagrams"
-repository = "https://github.com/hisyamzayd/mermaid-preview"
+description = "Interactive live preview for Mermaid diagrams in Zed — zero-config locally, seamless remote SSH support"
+repository = "https://github.com/hisyam-zayd/mermaid-preview"
 
 [grammars.mermaid]
 repository = "https://github.com/monaqa/tree-sitter-mermaid"
