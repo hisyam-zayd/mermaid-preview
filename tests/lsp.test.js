@@ -99,9 +99,45 @@ test('MermaidLanguageServer codeAction provider returns preview action', async (
   assert.equal(response.id, 2);
   assert.ok(Array.isArray(response.result));
   assert.equal(response.result[0].title, 'Open Mermaid Diagram Preview');
+  assert.equal(response.result[0].kind, 'quickfix');
   assert.equal(response.result[0].command.command, 'mermaid.openPreview');
 
   await close();
+});
+
+test('MermaidLanguageServer codeAction returns remote guide action when SSH is active', async () => {
+  const originalSsh = process.env.SSH_CLIENT;
+  process.env.SSH_CLIENT = '192.168.1.50 54321 22';
+
+  try {
+    const { server, send, waitForMessage, close } = createTestLspHarness();
+
+    const actionPromise = waitForMessage((m) => m.id === 2);
+    send({
+      jsonrpc: '2.0',
+      id: 2,
+      method: 'textDocument/codeAction',
+      params: { textDocument: { uri: 'file:///workspace/diagram.mmd' } },
+    });
+
+    const response = await actionPromise;
+    assert.equal(response.id, 2);
+    assert.ok(Array.isArray(response.result));
+    assert.equal(response.result.length, 2);
+    assert.equal(response.result[0].title, 'Open Mermaid Diagram Preview');
+    assert.equal(response.result[0].kind, 'quickfix');
+    assert.equal(response.result[1].title, 'Mermaid: Remote SSH Port Forwarding Guide');
+    assert.equal(response.result[1].kind, 'quickfix');
+    assert.equal(response.result[1].command.command, 'mermaid.showRemoteGuide');
+
+    await close();
+  } finally {
+    if (originalSsh) {
+      process.env.SSH_CLIENT = originalSsh;
+    } else {
+      delete process.env.SSH_CLIENT;
+    }
+  }
 });
 
 test('MermaidLanguageServer diagnostics generation and clearing', async () => {

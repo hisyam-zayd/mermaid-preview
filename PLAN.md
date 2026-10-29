@@ -94,6 +94,11 @@ Instead of horizontal layers, this plan is structured into **vertical feature sl
   - Decoupled watchdog timer via `.unref()` to keep test runner and process teardown fast and deterministic.
 - [x] **6.5 Parallel Test Port Isolation (`src/server/port-allocator.js`)**
   - Implemented dynamic ephemeral port (`port: 0`) allocation in `port-allocator.js` to ensure zero test worker race conditions during concurrent test runs.
+- [x] **6.6 Zero-Latency Startup Optimization (`src/lib.rs`)**
+  - Eliminated `worktree.shell_env()` subshell invocations, removing 3–4 second blocking startup lag when opening `.mmd` files.
+- [x] **6.7 Code Action Kind Specification (`src/lsp/index.js`)**
+  - Explicitly declared `kind: 'quickfix'` on all code actions and advertised `codeActionKinds` in LSP capabilities, ensuring `Cmd + .` (`editor: toggle code actions`) displays "Open Mermaid Diagram Preview" reliably.
+  - Expanded test suite to 36 automated tests covering remote code action behavior with 93.42% line coverage.
 
 ---
 

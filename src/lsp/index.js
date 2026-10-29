@@ -91,6 +91,7 @@ export class MermaidLanguageServer {
         const actions = [
           {
             title: 'Open Mermaid Diagram Preview',
+            kind: 'quickfix',
             command: {
               title: 'Open Mermaid Diagram Preview',
               command: 'mermaid.openPreview',
@@ -102,10 +103,11 @@ export class MermaidLanguageServer {
         if (isRemote) {
           actions.push({
             title: 'Mermaid: Remote SSH Port Forwarding Guide',
+            kind: 'quickfix',
             command: {
               title: 'Mermaid: Remote SSH Port Forwarding Guide',
               command: 'mermaid.showRemoteGuide',
-              arguments: [this.previewServer.port || 8765],
+              arguments: [this.previewServer?.port || 8765],
             },
           });
         }
