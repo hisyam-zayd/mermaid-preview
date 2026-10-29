@@ -173,6 +173,9 @@ export class MermaidLanguageServer {
                 });
               }
             }, this.watchdogTimeoutMs);
+            if (this.watchdogTimer && typeof this.watchdogTimer.unref === 'function') {
+              this.watchdogTimer.unref();
+            }
           }
 
           return { success: true, url: previewUrl, port };

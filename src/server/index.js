@@ -110,7 +110,10 @@ export class PreviewServer {
           retries--;
           this.preferredPort = this.port + 1;
           if (this.wss) {
-            this.wss.close();
+            try { this.wss.close(); } catch {}
+          }
+          if (this.httpServer) {
+            try { this.httpServer.close(); } catch {}
           }
           continue;
         }

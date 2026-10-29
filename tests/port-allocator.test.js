@@ -38,3 +38,10 @@ test('findFreePort skips already occupied ports', async () => {
 
   await new Promise((resolve) => server.close(resolve));
 });
+
+test('findFreePort triggers OS port 0 allocation when maxTries is 0', async () => {
+  const fallbackPort = await findFreePort(19300, 0);
+  assert.ok(typeof fallbackPort === 'number' && fallbackPort > 0);
+  const isAvail = await isPortAvailable(fallbackPort);
+  assert.equal(isAvail, true);
+});

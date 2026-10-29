@@ -34,6 +34,19 @@ export function isPortAvailable(port) {
  * @returns {Promise<number>}
  */
 export async function findFreePort(preferredPort = 8765, maxTries = 50) {
+  if (preferredPort === 0) {
+    return new Promise((resolve, reject) => {
+      const server = net.createServer();
+      server.unref();
+      server.once('error', reject);
+      server.listen(0, '127.0.0.1', () => {
+        const address = server.address();
+        const freePort = typeof address === 'object' && address ? address.port : 8765;
+        server.close(() => resolve(freePort));
+      });
+    });
+  }
+
   for (let attempt = 0; attempt < maxTries; attempt++) {
     const port = preferredPort + attempt;
     if (await isPortAvailable(port)) {

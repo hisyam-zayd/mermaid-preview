@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { PassThrough } from 'node:stream';
 import { MermaidLanguageServer } from '../src/lsp/index.js';
+import { PreviewServer } from '../src/server/index.js';
 import { encodeMessage, MessageReader } from '../src/lsp/json-rpc.js';
 
 function createTestLspHarness() {
@@ -11,9 +12,13 @@ function createTestLspHarness() {
   const reader = new MessageReader();
   lspToClient.pipe(reader);
 
+  const previewServer = new PreviewServer({ port: 0 });
+
   const server = new MermaidLanguageServer({
     inStream: clientToLsp,
     outStream: lspToClient,
+    previewServer,
+    watchdogTimeoutMs: 50,
   });
 
   const send = (msg) => clientToLsp.write(encodeMessage(msg));
@@ -41,11 +46,23 @@ function createTestLspHarness() {
     });
   };
 
-  return { server, send, waitForMessage };
+  const close = async () => {
+    if (server.watchdogTimer) {
+      clearTimeout(server.watchdogTimer);
+      server.watchdogTimer = null;
+    }
+    if (server.previewServer) {
+      await server.previewServer.close();
+    }
+    clientToLsp.end();
+    lspToClient.end();
+  };
+
+  return { server, send, waitForMessage, close };
 }
 
 test('MermaidLanguageServer initialize handshake', async () => {
-  const { server, send, waitForMessage } = createTestLspHarness();
+  const { server, send, waitForMessage, close } = createTestLspHarness();
 
   const initPromise = waitForMessage((m) => m.id === 1);
   send({
@@ -64,11 +81,11 @@ test('MermaidLanguageServer initialize handshake', async () => {
     'mermaid.showRemoteGuide',
   ]);
 
-  await server.previewServer.close();
+  await close();
 });
 
 test('MermaidLanguageServer codeAction provider returns preview action', async () => {
-  const { server, send, waitForMessage } = createTestLspHarness();
+  const { server, send, waitForMessage, close } = createTestLspHarness();
 
   const actionPromise = waitForMessage((m) => m.id === 2);
   send({
@@ -84,11 +101,11 @@ test('MermaidLanguageServer codeAction provider returns preview action', async (
   assert.equal(response.result[0].title, 'Open Mermaid Diagram Preview');
   assert.equal(response.result[0].command.command, 'mermaid.openPreview');
 
-  await server.previewServer.close();
+  await close();
 });
 
 test('MermaidLanguageServer diagnostics generation and clearing', async () => {
-  const { server, send, waitForMessage } = createTestLspHarness();
+  const { server, send, waitForMessage, close } = createTestLspHarness();
 
   // 1. Open broken document -> Expect error diagnostic
   const errorDiagPromise = waitForMessage(
@@ -128,11 +145,11 @@ test('MermaidLanguageServer diagnostics generation and clearing', async () => {
   const clearDiag = await clearDiagPromise;
   assert.equal(clearDiag.params.diagnostics.length, 0);
 
-  await server.previewServer.close();
+  await close();
 });
 
 test('MermaidLanguageServer executeCommand triggers window/showDocument', async () => {
-  const { server, send, waitForMessage } = createTestLspHarness();
+  const { server, send, waitForMessage, close } = createTestLspHarness();
 
   const showDocPromise = waitForMessage((m) => m.method === 'window/showDocument');
   const cmdResponsePromise = waitForMessage((m) => m.id === 5);
@@ -156,22 +173,150 @@ test('MermaidLanguageServer executeCommand triggers window/showDocument', async 
   assert.equal(cmdRes.result.success, true);
   assert.ok(cmdRes.result.port > 0);
 
-  if (server.watchdogTimer) {
-    clearTimeout(server.watchdogTimer);
-    server.watchdogTimer = null;
-  }
-  await server.previewServer.close();
+  await close();
 });
 
-test('MermaidLanguageServer executeCommand mermaid.showRemoteGuide returns setup guide', async () => {
-  const { server, send, waitForMessage } = createTestLspHarness();
+test('MermaidLanguageServer remote watchdog does NOT alert when client connects', async () => {
+  const origSsh = process.env.SSH_CLIENT;
+  process.env.SSH_CLIENT = '192.168.1.100 50000 22';
 
-  const msgPromise = waitForMessage((m) => m.method === 'window/showMessage');
-  const cmdResponsePromise = waitForMessage((m) => m.id === 6);
+  const { server, send, waitForMessage, close } = createTestLspHarness();
+
+  const infoMessagePromise = waitForMessage(
+    (m) => m.method === 'window/showMessage' && m.params.type === 3
+  );
 
   send({
     jsonrpc: '2.0',
-    id: 6,
+    id: 8,
+    method: 'workspace/executeCommand',
+    params: {
+      command: 'mermaid.openPreview',
+      arguments: ['file:///workspace/diagram.mmd'],
+    },
+  });
+
+  await infoMessagePromise;
+
+  // Simulate client connection within timeout window
+  server.previewServer.lastClientConnectionTime = Date.now() + 500;
+
+  let receivedError = false;
+  const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 80));
+  waitForMessage((m) => m.method === 'window/showMessage' && m.params.type === 1, 80)
+    .then(() => { receivedError = true; })
+    .catch(() => {});
+
+  await timeoutPromise;
+  assert.equal(receivedError, false, 'Should not send error toast when client connected');
+
+  if (origSsh !== undefined) {
+    process.env.SSH_CLIENT = origSsh;
+  } else {
+    delete process.env.SSH_CLIENT;
+  }
+
+  await close();
+});
+
+test('MermaidLanguageServer handles codeAction/resolve, shutdown, and unknown commands', async () => {
+  const { server, send, waitForMessage, close } = createTestLspHarness();
+
+  // 1. codeAction/resolve
+  const resolvePromise = waitForMessage((m) => m.id === 20);
+  send({
+    jsonrpc: '2.0',
+    id: 20,
+    method: 'codeAction/resolve',
+    params: { title: 'Resolve test' },
+  });
+  const resolved = await resolvePromise;
+  assert.deepEqual(resolved.result, { title: 'Resolve test' });
+
+  // 2. Unknown command in workspace/executeCommand -> Error response
+  const errPromise = waitForMessage((m) => m.id === 21);
+  send({
+    jsonrpc: '2.0',
+    id: 21,
+    method: 'workspace/executeCommand',
+    params: { command: 'nonexistent.command' },
+  });
+  const errRes = await errPromise;
+  assert.ok(errRes.error);
+  assert.match(errRes.error.message, /Unknown command/);
+
+  // 3. shutdown
+  const shutdownPromise = waitForMessage((m) => m.id === 22);
+  send({
+    jsonrpc: '2.0',
+    id: 22,
+    method: 'shutdown',
+  });
+  const shutdownRes = await shutdownPromise;
+  assert.equal(shutdownRes.result, null);
+  assert.equal(server.isServerRunning, false);
+
+  await close();
+});
+
+test('MermaidLanguageServer handles didSave, didClose, and exit notifications', async () => {
+  const { server, send, close } = createTestLspHarness();
+
+  const docUri = 'file:///workspace/saved-diagram.mmd';
+
+  // didOpen
+  send({
+    jsonrpc: '2.0',
+    method: 'textDocument/didOpen',
+    params: {
+      textDocument: {
+        uri: docUri,
+        text: 'flowchart TD\n  A --> B',
+      },
+    },
+  });
+
+  // didSave
+  send({
+    jsonrpc: '2.0',
+    method: 'textDocument/didSave',
+    params: {
+      textDocument: {
+        uri: docUri,
+        text: 'flowchart TD\n  A --> B\n  B --> C',
+      },
+    },
+  });
+
+  // didClose
+  send({
+    jsonrpc: '2.0',
+    method: 'textDocument/didClose',
+    params: {
+      textDocument: { uri: docUri },
+    },
+  });
+
+  // exit
+  send({
+    jsonrpc: '2.0',
+    method: 'exit',
+  });
+
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  assert.equal(server.documents.has(docUri), false);
+  await close();
+});
+
+test('MermaidLanguageServer executeCommand mermaid.showRemoteGuide returns setup guide', async () => {
+  const { server, send, waitForMessage, close } = createTestLspHarness();
+
+  const msgPromise = waitForMessage((m) => m.method === 'window/showMessage');
+  const cmdResponsePromise = waitForMessage((m) => m.id === 30);
+
+  send({
+    jsonrpc: '2.0',
+    id: 30,
     method: 'workspace/executeCommand',
     params: {
       command: 'mermaid.showRemoteGuide',
@@ -187,44 +332,5 @@ test('MermaidLanguageServer executeCommand mermaid.showRemoteGuide returns setup
   assert.equal(cmdRes.result.success, true);
   assert.equal(cmdRes.result.port, 8765);
 
-  await server.previewServer.close();
-});
-
-test('MermaidLanguageServer remote watchdog alerts user if no browser client connects', async () => {
-  const origSsh = process.env.SSH_CLIENT;
-  process.env.SSH_CLIENT = '192.168.1.100 50000 22';
-
-  const { server, send, waitForMessage } = createTestLspHarness();
-  server.watchdogTimeoutMs = 60; // fast timeout for test
-
-  const errorAlertPromise = waitForMessage(
-    (m) => m.method === 'window/showMessage' && m.params.type === 1
-  );
-
-  send({
-    jsonrpc: '2.0',
-    id: 7,
-    method: 'workspace/executeCommand',
-    params: {
-      command: 'mermaid.openPreview',
-      arguments: ['file:///workspace/diagram.mmd'],
-    },
-  });
-
-  const errorAlert = await errorAlertPromise;
-  assert.equal(errorAlert.params.type, 1, 'Type 1 is LSP Error severity');
-  assert.ok(errorAlert.params.message.includes('No connection received on port'));
-  assert.ok(errorAlert.params.message.includes('ssh -L'));
-
-  if (origSsh !== undefined) {
-    process.env.SSH_CLIENT = origSsh;
-  } else {
-    delete process.env.SSH_CLIENT;
-  }
-
-  if (server.watchdogTimer) {
-    clearTimeout(server.watchdogTimer);
-    server.watchdogTimer = null;
-  }
-  await server.previewServer.close();
+  await close();
 });

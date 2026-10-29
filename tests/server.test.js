@@ -94,7 +94,40 @@ test('PreviewServer integration lifecycle', async (t) => {
     assert.ok(errMsg);
     assert.equal(errMsg.valid, false);
 
+    // Test WebSocket ping -> pong
+    ws.send(JSON.stringify({ type: 'ping' }));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    assert.ok(messages.some((m) => m.type === 'pong'), 'Must reply with pong to ping packet');
+
+    // Test WebSocket request_sync
+    ws.send(JSON.stringify({ type: 'request_sync' }));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    assert.ok(messages.some((m) => m.type === 'update'), 'Must reply with update to request_sync');
+
+    // Test malformed WebSocket packet (should not crash server)
+    ws.send('invalid-json');
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
     ws.close();
+  });
+
+  await t.test('handles non-GET HTTP methods with 405', async () => {
+    const statusCode = await new Promise((resolve, reject) => {
+      const req = http.request({
+        host: '127.0.0.1',
+        port,
+        path: '/',
+        method: 'POST',
+      }, (res) => resolve(res.statusCode));
+      req.on('error', reject);
+      req.end();
+    });
+    assert.equal(statusCode, 405);
+  });
+
+  await t.test('handles non-existent static files with 404', async () => {
+    const res = await httpGet(url + '/non-existent-file-xyz.js');
+    assert.equal(res.status, 404);
   });
 
   // Teardown
