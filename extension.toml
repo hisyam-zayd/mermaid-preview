@@ -1,0 +1,15 @@
+id = "mermaid-preview"
+name = "Mermaid Preview"
+version = "0.1.0"
+schema_version = 1
+authors = ["Hisyam Zayd <hisyamzayd@gmail.com>"]
+description = "Zero-config interactive live preview and language support for Mermaid diagrams"
+repository = "https://github.com/hisyamzayd/mermaid-preview"
+
+[grammars.mermaid]
+repository = "https://github.com/monaqa/tree-sitter-mermaid"
+commit = "2b225c5673ec4d59a54452c1ef4336c5357cdb9c"
+
+[language_servers.mermaid-lsp]
+name = "Mermaid Language Server"
+languages = ["Mermaid"]
