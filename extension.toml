@@ -8,7 +8,7 @@ repository = "https://github.com/hisyamzayd/mermaid-preview"
 
 [grammars.mermaid]
 repository = "https://github.com/monaqa/tree-sitter-mermaid"
-commit = "2b225c5673ec4d59a54452c1ef4336c5357cdb9c"
+commit = "90ae195b31933ceb9d079abfa8a3ad0a36fee4cc"
 
 [language_servers.mermaid-lsp]
 name = "Mermaid Language Server"
