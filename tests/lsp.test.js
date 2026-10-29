@@ -58,7 +58,7 @@ test('MermaidLanguageServer initialize handshake', async () => {
   const response = await initPromise;
   assert.equal(response.id, 1);
   assert.equal(response.result.capabilities.textDocumentSync, 1);
-  assert.equal(response.result.capabilities.codeActionProvider, true);
+  assert.ok(response.result.capabilities.codeActionProvider);
   assert.deepEqual(response.result.capabilities.executeCommandProvider.commands, ['mermaid.openPreview']);
 
   await server.previewServer.close();

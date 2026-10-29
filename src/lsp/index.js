@@ -4,6 +4,8 @@ import { PreviewServer } from '../server/index.js';
 import { validateMermaid } from '../server/validator.js';
 import { MessageReader, encodeMessage } from './json-rpc.js';
 
+console.error('[mermaid-lsp] Initializing process, cwd:', process.cwd());
+
 export class MermaidLanguageServer {
   constructor(options = {}) {
     this.inStream = options.inStream || process.stdin;
@@ -40,12 +42,16 @@ export class MermaidLanguageServer {
   }
 
   async handleRequest(method, params) {
+    console.error(`[mermaid-lsp] Handling request: ${method}`);
     switch (method) {
       case 'initialize':
         return {
           capabilities: {
             textDocumentSync: 1, // Full document sync (1)
-            codeActionProvider: true,
+            codeActionProvider: {
+              codeActionKinds: ['', 'quickfix', 'refactor', 'source'],
+              resolveProvider: false,
+            },
             executeCommandProvider: {
               commands: ['mermaid.openPreview'],
             },
@@ -55,6 +61,9 @@ export class MermaidLanguageServer {
             version: '0.1.0',
           },
         };
+
+      case 'codeAction/resolve':
+        return params;
 
       case 'shutdown':
         if (this.previewServer) {
