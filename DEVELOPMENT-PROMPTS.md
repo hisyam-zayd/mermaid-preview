@@ -40,7 +40,7 @@ This document records the exact user prompts, architectural debates, design prin
 
 ### Architectural Resolution:
 * **Zero System Config Pollution:** The user firmly rejected modifying global `~/.ssh/config`.
-* **Zed-Native Port Forwarding:** Zed remote provides native port forwarding inside `settings.json` (`ssh_connections` $\rightarrow$ `port_forwards`), utilizing the active Zed SSH tunnel without touching system-level SSH configuration files.
+* **Zed-Native Port Forwarding:** Zed remote provides native port forwarding inside `settings.json` (`ssh_connections` → `port_forwards`), utilizing the active Zed SSH tunnel without touching system-level SSH configuration files.
 * **The Stdio vs. Localhost Analysis:** While an SSH Stdio pipe avoids ports, a native desktop wrapper would add immense platform maintenance overhead. The user opted for **Localhost + WebSocket** because it is lightweight, cross-platform, supports official `mermaid.js`, and can be pinned as a borderless macOS Web App (PWA) in one click via Safari.
 
 ---

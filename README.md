@@ -39,7 +39,7 @@ Since this extension is in active development and not yet published to the offic
 
 ---
 
-### Option B: Running via Zed Remote SSH (MacBook Client $\longleftrightarrow$ Remote Ubuntu Host)
+### Option B: Running via Zed Remote SSH (MacBook Client ⟷ Remote Ubuntu Host)
 If your code lives on a remote Ubuntu machine and you connect via Zed Remote on your MacBook:
 
 1. **Install dependencies on the remote host:**
@@ -48,7 +48,7 @@ If your code lives on a remote Ubuntu machine and you connect via Zed Remote on 
    npm install
    ```
 2. **Configure Zed Port Forwarding:**
-   In your Zed `settings.json` (`Cmd + Shift + P` $\rightarrow$ `zed: open settings`):
+   In your Zed `settings.json` (`Cmd + Shift + P` → `zed: open settings`):
    ```json
    {
      "ssh_connections": [
