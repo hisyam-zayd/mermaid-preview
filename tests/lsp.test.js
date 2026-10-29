@@ -255,6 +255,42 @@ test('MermaidLanguageServer remote watchdog does NOT alert when client connects'
   await close();
 });
 
+test('MermaidLanguageServer remote watchdog alerts when no client connects within timeout', async () => {
+  const origSsh = process.env.SSH_CLIENT;
+  process.env.SSH_CLIENT = '192.168.1.100 50000 22';
+
+  const { server, send, waitForMessage, close } = createTestLspHarness({
+    watchdogTimeoutMs: 30,
+  });
+
+  const errorToastPromise = waitForMessage(
+    (m) => m.method === 'window/showMessage' && m.params.type === 1,
+    200
+  );
+
+  send({
+    jsonrpc: '2.0',
+    id: 9,
+    method: 'workspace/executeCommand',
+    params: {
+      command: 'mermaid.openPreview',
+      arguments: ['file:///workspace/diagram.mmd'],
+    },
+  });
+
+  const errorMessage = await errorToastPromise;
+  assert.equal(errorMessage.params.type, 1);
+  assert.match(errorMessage.params.message, /No connection received on port/);
+
+  if (origSsh !== undefined) {
+    process.env.SSH_CLIENT = origSsh;
+  } else {
+    delete process.env.SSH_CLIENT;
+  }
+
+  await close();
+});
+
 test('MermaidLanguageServer handles codeAction/resolve, shutdown, and unknown commands', async () => {
   const { server, send, waitForMessage, close } = createTestLspHarness();
 

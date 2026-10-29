@@ -87,10 +87,10 @@ Instead of horizontal layers, this plan is structured into **vertical feature sl
 - [x] **6.2 Remote SSH Session Detection & On-Demand Guide (`src/lsp/index.js`)**
   - Detect `SSH_CLIENT` / `SSH_CONNECTION` and offer dedicated `"Mermaid: Remote SSH Port Forwarding Guide"` Code Action in Zed with exact copy-paste configuration.
 - [x] **6.3 Smart Connection Watchdog (`src/lsp/index.js`, `src/server/index.js`)**
-  - 5-second connection watchdog armed on `mermaid.openPreview`; checks for incoming HTTP / WebSocket connections from client browser.
-  - Fires warning/error toast in Zed if browser fails to reach port within 5s, with direct guidance to configure port forwarding.
+  - 15-second connection watchdog (extended from 5s to allow for cold browser boot and OS window initialization) armed on `mermaid.openPreview`; checks for incoming HTTP / WebSocket connections from client browser. Configurable via `MERMAID_WATCHDOG_TIMEOUT_MS`.
+  - Fires warning/error toast in Zed if browser fails to reach port within timeout, with direct guidance to configure port forwarding.
 - [x] **6.4 Comprehensive Automated Test Suite (`tests/`)**
-  - Expanded test coverage across all subsystems to 35 automated tests (reaching 93.4% line coverage and 97.6% function coverage).
+  - Expanded test coverage across all subsystems to 37 automated tests (reaching 94.21% line coverage and 97.6% function coverage).
   - Decoupled watchdog timer via `.unref()` to keep test runner and process teardown fast and deterministic.
 - [x] **6.5 Parallel Test Port Isolation (`src/server/port-allocator.js`)**
   - Implemented dynamic ephemeral port (`port: 0`) allocation in `port-allocator.js` to ensure zero test worker race conditions during concurrent test runs.

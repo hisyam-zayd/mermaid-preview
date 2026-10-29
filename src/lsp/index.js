@@ -18,7 +18,11 @@ export class MermaidLanguageServer {
     this.isServerRunning = false;
     this.nextRequestId = 1;
     this.watchdogTimer = null;
-    this.watchdogTimeoutMs = options.watchdogTimeoutMs ?? 5000;
+    this.watchdogTimeoutMs = options.watchdogTimeoutMs ?? (
+      process.env.MERMAID_WATCHDOG_TIMEOUT_MS
+        ? parseInt(process.env.MERMAID_WATCHDOG_TIMEOUT_MS, 10)
+        : 15000
+    );
 
     this.reader.on('message', this.handleMessage.bind(this));
     this.inStream.pipe(this.reader);
