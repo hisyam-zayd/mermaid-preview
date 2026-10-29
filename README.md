@@ -20,11 +20,28 @@ Zero-config, high-fidelity interactive live preview and language support for **M
 
 ---
 
+## Supported Platforms & Environments
+
+This extension is **100% platform-agnostic** and supports any combination of local and remote development:
+
+| Mode | Client Machine (Display) | Host Machine (Code & Files) | Status |
+| :--- | :--- | :--- | :---: |
+| **Local** | macOS (Apple Silicon & Intel) | Same machine | ✅ Supported |
+| **Local** | Linux (Ubuntu, Fedora, Arch, Debian) | Same machine | ✅ Supported |
+| **Local** | Windows 10 / 11 | Same machine | ✅ Supported |
+| **Remote SSH** | **macOS (MacBook)** | **Linux (Ubuntu, Debian, Fedora)** | ✅ Supported *(Zero config)* |
+| **Remote SSH** | **Windows PC** | **Linux Server / Workstation** | ✅ Supported |
+| **Remote SSH** | **Linux Laptop** | **Linux Server / Cloud VM** | ✅ Supported |
+
+**Supported Browsers:** Chrome, Safari, Firefox, Edge, Arc, Brave, and any modern WebKit/Chromium-based browser.
+
+---
+
 ## Running in Zed as a Development Extension
 
 Since this extension is in active development and not yet published to the official Zed Extension Registry, you can load and run it directly as a **Development Extension**.
 
-### Option A: Running Locally (Code and Zed on macOS / Linux)
+### Option A: Local Development (macOS, Linux, or Windows)
 1. Clone this repository:
    ```bash
    git clone https://github.com/hisyamzayd/mermaid-preview.git
@@ -32,15 +49,15 @@ Since this extension is in active development and not yet published to the offic
    npm install
    ```
 2. Open **Zed**.
-3. Open the Command Palette (`Cmd + Shift + P` on macOS / `Ctrl + Shift + P` on Linux).
+3. Open the Command Palette (`Cmd + Shift + P` on macOS / `Ctrl + Shift + P` on Linux & Windows).
 4. Type and select: **`Extensions: Install Development Extension`**.
 5. Select this repository folder (`mermaid-preview`).
 6. Zed will load the extension and activate it for all `.mmd` and `.mermaid` files.
 
 ---
 
-### Option B: Running via Zed Remote SSH (MacBook Client ⟷ Remote Ubuntu Host)
-If your code lives on a remote Ubuntu machine and you connect via Zed Remote on your MacBook:
+### Option B: Remote SSH Development (Any Client ⟷ Any Remote Host)
+If your code lives on a remote host (e.g. an Ubuntu machine at home or a cloud VM) and you connect remotely from your laptop (Mac, Windows, or Linux):
 
 1. **Install dependencies on the remote host:**
    ```bash
@@ -48,7 +65,7 @@ If your code lives on a remote Ubuntu machine and you connect via Zed Remote on 
    npm install
    ```
 2. **Configure Zed Port Forwarding:**
-   In your Zed `settings.json` (`Cmd + Shift + P` → `zed: open settings`):
+   In your Zed `settings.json` (`Cmd + Shift + P` or `Ctrl + Shift + P` → `zed: open settings`):
    ```json
    {
      "ssh_connections": [
@@ -65,7 +82,7 @@ If your code lives on a remote Ubuntu machine and you connect via Zed Remote on 
    }
    ```
 3. **Load the Development Extension:**
-   * In your remote Zed window, press `Cmd + Shift + P`.
+   * In your remote Zed window, open the Command Palette.
    * Select: **`Extensions: Install Development Extension`**.
    * Select the repository path on the remote host.
 
