@@ -68,7 +68,6 @@ export class MermaidLanguageServer {
         return [
           {
             title: 'Open Mermaid Diagram Preview',
-            kind: 'quickfix',
             command: {
               title: 'Open Mermaid Diagram Preview',
               command: 'mermaid.openPreview',
