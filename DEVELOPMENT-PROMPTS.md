@@ -69,11 +69,9 @@ This document records the exact user prompts, architectural debates, design prin
 1. **Vertical Feature Slices over Horizontal Layers:** Build end-to-end working capabilities rather than implementing layer by layer.
 2. **Comprehensive Test Suite First:**
    > *"and also add test. unit test, integration test, e2e test, whatever. so i dont need to see the code directly, just the test"*
-3. **Manual Exclusion Rule:**
-   > *"oh and remember. please ignore the `ignore-this` folder. donot add it into gitignore. just manually ignore."*
-4. **Granular Commits with Slice Prefixes:**
+3. **Granular Commits with Slice Prefixes:**
    > *"maybe instead of commit for each slice, u may split it more into usecase or processes or domain, etc. so more granular. but with prefix message that tell this is belong to whose slice"*
-5. **Marketplace Compatibility:** Ensure compliance with the official Zed Extension Registry standards (`extension.toml`, MIT license, kebab-case id).
+4. **Marketplace Compatibility:** Ensure compliance with the official Zed Extension Registry standards (`extension.toml`, MIT license, kebab-case id).
 
 ---
 

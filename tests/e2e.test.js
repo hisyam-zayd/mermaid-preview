@@ -57,8 +57,8 @@ test('Full End-to-End Workflow: LSP -> WebSocket -> Viewport -> Diagnostics', as
     const initRes = await initPromise;
     assert.equal(initRes.result.capabilities.textDocumentSync, 1);
 
-    // 2. Open a real-world complex diagram (00-unified-master-flow.mmd)
-    let realDiagramCode = `
+    // 2. Open a real-world complex diagram
+    const realDiagramCode = `
 flowchart TD
     subgraph UI_Layer["1. User & Terminal UI"]
         User["User Submits Prompt"]
@@ -73,14 +73,6 @@ flowchart TD
     CLI --> Parser
     Parser --> DAG
     `;
-
-    try {
-      const candidatePath = path.resolve('ignore-this/diagrams/00-unified-master-flow.mmd');
-      const existing = await fs.readFile(candidatePath, 'utf8');
-      if (existing) realDiagramCode = existing;
-    } catch {
-      // fallback to above
-    }
 
     const openDiagPromise = waitForLspMessage(
       (m) => m.method === 'textDocument/publishDiagnostics'
