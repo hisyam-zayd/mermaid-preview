@@ -1,4 +1,4 @@
-# Mermaid Preview for Zed
+# Mermaid Preview for Zed (still in development)
 
 High-fidelity interactive live preview and language support for **Mermaid** diagrams (`.mmd`, `.mermaid`) in the [Zed code editor](https://zed.dev). Zero-configuration for local workflows, with simple 1-step port forwarding for remote SSH development.
 
