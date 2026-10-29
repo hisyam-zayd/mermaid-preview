@@ -22,19 +22,54 @@ Zero-config, high-fidelity interactive live preview and language support for **M
 
 ---
 
-## Installation
+## Running in Zed as a Development Extension
 
-### Local Development Extension (Zed)
-1. Clone this repository to your machine:
+Since this extension is in active development and not yet published to the official Zed Extension Registry, you can load and run it directly as a **Development Extension**.
+
+### Option A: Running Locally (Code and Zed on macOS / Linux)
+1. Clone this repository:
    ```bash
    git clone https://github.com/hisyamzayd/mermaid-preview.git
    cd mermaid-preview
    npm install
    ```
-2. Open Zed.
+2. Open **Zed**.
 3. Open the Command Palette (`Cmd + Shift + P` on macOS / `Ctrl + Shift + P` on Linux).
 4. Type and select: **`Extensions: Install Development Extension`**.
-5. Select the `mermaid-preview` directory.
+5. Select this repository folder (`mermaid-preview`).
+6. Zed will load the extension and activate it for all `.mmd` and `.mermaid` files.
+
+---
+
+### Option B: Running via Zed Remote SSH (MacBook Client $\longleftrightarrow$ Remote Ubuntu Host)
+If your code lives on a remote Ubuntu machine and you connect via Zed Remote on your MacBook:
+
+1. **Install dependencies on the remote host:**
+   ```bash
+   cd /path/to/mermaid-preview
+   npm install
+   ```
+2. **Configure Zed Port Forwarding:**
+   In your Zed `settings.json` (`Cmd + Shift + P` $\rightarrow$ `zed: open settings`):
+   ```json
+   {
+     "ssh_connections": [
+       {
+         "host": "your-remote-host",
+         "port_forwards": [
+           {
+             "local_port": 8765,
+             "remote_port": 8765
+           }
+         ]
+       }
+     ]
+   }
+   ```
+3. **Load the Development Extension:**
+   * In your remote Zed window, press `Cmd + Shift + P`.
+   * Select: **`Extensions: Install Development Extension`**.
+   * Select the repository path on the remote host.
 
 ---
 
@@ -48,46 +83,29 @@ Zero-config, high-fidelity interactive live preview and language support for **M
 
 ---
 
-## Remote SSH Development
+## Development & Automated Tests
 
-When connecting to a remote machine (e.g. Linux workstation or cloud server) from your MacBook, you can automatically forward the preview port through Zed's existing SSH session:
-
-In your Zed `settings.json` (`Cmd + Shift + P` $\rightarrow$ `zed: open settings`):
-
-```json
-{
-  "ssh_connections": [
-    {
-      "host": "your-remote-host",
-      "port_forwards": [
-        {
-          "local_port": 8765,
-          "remote_port": 8765
-        }
-      ]
-    }
-  ]
-}
-```
-
-Now, when you trigger preview on the remote host, open `http://localhost:8765` in Safari or Chrome on your MacBook.
-
----
-
-## Development & Testing
-
-Run the automated test suite (unit tests, integration tests, and end-to-end LSP workflows):
+Run the full automated test suite (unit tests, integration tests, and end-to-end LSP workflows):
 
 ```bash
 npm test
 ```
 
-### Test Coverage
+### Test Coverage (26 Passing Tests)
 * ✅ **Port Allocator:** Verifies automatic free port binding and avoidance of port collisions.
 * ✅ **Validator:** Tests syntax verification across flowcharts, sequence diagrams, and broken code.
 * ✅ **Server Integration:** Verifies HTTP static serving, security path isolation, and WebSocket streaming.
 * ✅ **LSP Protocol:** Validates JSON-RPC framing, initialize handshake, diagnostics reporting, and `window/showDocument` execution.
 * ✅ **Full E2E Workflow:** Tests complete pipeline from document open to browser WebSocket sync and real-time edits.
+
+---
+
+## Built Alongside Gemini 3.8 Flash (High)
+
+This extension was designed and developed through AI-human pair programming alongside **Gemini 3.8 Flash (High)**. 
+
+* For the complete user prompts, architectural debate logs, and feature-slicing specifications that shaped this project, see **[DEVELOPMENT-PROMPTS.md](DEVELOPMENT-PROMPTS.md)**.
+* **Contributions & Feedback:** Any bug reports, syntax edge cases, performance improvements, or additional feature requests are warmly welcomed! Please feel free to open an issue or submit a pull request.
 
 ---
 
