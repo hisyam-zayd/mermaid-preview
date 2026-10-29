@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mermaid Live Preview</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="vendor/mermaid.min.js"></script>
+  <script src="vendor/svg-pan-zoom.min.js"></script>
+</head>
+<body>
+  <div id="app">
+    <header id="toolbar">
+      <div class="toolbar-group">
+        <div class="file-info">
+          <span>📄</span>
+          <span id="filename">loading...</span>
+        </div>
+        <div class="status-indicator">
+          <span id="status-dot" class="status-dot"></span>
+          <span id="status-text">Connecting</span>
+        </div>
+      </div>
+
+      <div class="toolbar-group">
+        <div class="btn-group">
+          <button id="btn-fit" class="btn" title="Fit to Screen">🔍 Fit</button>
+          <button id="btn-center" class="btn" title="Center View">🎯 Center</button>
+          <button id="btn-reset" class="btn" title="Reset Zoom (100%)">🔄 100%</button>
+        </div>
+
+        <div class="btn-group">
+          <button id="btn-zoom-in" class="btn" title="Zoom In">➕</button>
+          <button id="btn-zoom-out" class="btn" title="Zoom Out">➖</button>
+        </div>
+
+        <button id="btn-theme" class="btn" title="Toggle Dark/Light Mode">🌓 Theme</button>
+
+        <div class="btn-group">
+          <button id="btn-export-svg" class="btn" title="Copy Raw SVG">📋 SVG</button>
+          <button id="btn-export-png" class="btn" title="Download High-Res PNG">💾 PNG</button>
+        </div>
+      </div>
+    </header>
+
+    <main id="canvas-container">
+      <div id="svg-wrapper">
+        <div class="placeholder-msg">Waiting for diagram content from Zed...</div>
+      </div>
+
+      <div id="error-banner">
+        <div class="error-title">
+          <span>⚠️</span>
+          <span id="error-title-text">Syntax Error</span>
+        </div>
+        <div id="error-desc" class="error-desc"></div>
+      </div>
+
+      <div id="toast"></div>
+    </main>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
