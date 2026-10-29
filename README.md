@@ -2,8 +2,6 @@
 
 Zero-config, high-fidelity interactive live preview and language support for **Mermaid** diagrams (`.mmd`, `.mermaid`) in the [Zed code editor](https://zed.dev).
 
-![Mermaid Preview Demo](https://raw.githubusercontent.com/mermaid-js/mermaid/develop/packages/mermaid/src/docs/public/favicon.svg)
-
 ---
 
 ## Features
@@ -106,6 +104,12 @@ This extension was designed and developed through AI-human pair programming alon
 
 * For the complete user prompts, architectural debate logs, and feature-slicing specifications that shaped this project, see **[DEVELOPMENT-PROMPTS.md](DEVELOPMENT-PROMPTS.md)**.
 * **Contributions & Feedback:** Any bug reports, syntax edge cases, performance improvements, or additional feature requests are warmly welcomed! Please feel free to open an issue or submit a pull request.
+
+---
+
+## Trademark Disclaimer
+
+Mermaid is an open-source project created by Knut Sveidqvist and contributors under the MIT License. This extension is an independent community project and is not officially affiliated with, sponsored by, or endorsed by the Mermaid.js team or Zed Industries.
 
 ---
 
